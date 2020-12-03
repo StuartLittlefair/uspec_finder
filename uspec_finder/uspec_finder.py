@@ -350,7 +350,11 @@ class FovSetter(tk.LabelFrame):
     def query_simbad(self):
         g = get_root(self).globals
         try:
-            coo = SkyCoord.from_name(self.targName.value())
+            try:
+                coo = SkyCoord.from_name(self.targName.value())
+            except NameResolveError:
+                # see if we can get coords from name itself
+                coo = SkyCoord.from_name(self.targName.value(), parse=True)
         except NameResolveError:
             self.targName.config(bg='red')
             self.logger.warn(msg='Could not resolve target')
@@ -548,14 +552,23 @@ class FovSetter(tk.LabelFrame):
             self.after(500, self._check_image_load, t)
         else:
             # load image into viewer
+            if self.imfilepath is None:
+                # no image from server
+                msg = 'No image for this location in {}'.format(
+                    self.servername
+                )
+                self.fitsimage.onscreen_message(msg)
+                return
+
             try:
                 get_root(self).load_file(self.imfilepath)
             except Exception as err:
-                errmsg = "failed to load file {}: {}".format(
+                errmsg = "failed to load file {}:\n{}".format(
                     self.imfilepath,
                     str(err)
                 )
                 self.logger.error(msg=errmsg)
+                self.fitsimage.onscreen_message(errmsg)
             else:
                 self.draw_ccd()
                 self.targetMarker()
@@ -584,6 +597,7 @@ class FovSetter(tk.LabelFrame):
         except Exception as err:
             errmsg = "Failed to download sky image: {}".format(str(err))
             self.logger.error(msg=errmsg)
+            self.imfilepath = None
             return
 
         self.imfilepath = dstpath
