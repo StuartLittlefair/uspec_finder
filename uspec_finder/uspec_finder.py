@@ -543,7 +543,7 @@ class FovSetter(tk.LabelFrame):
         self.after(1000, self._check_image_load, t)
 
     def _check_image_load(self, t):
-        if t.isAlive():
+        if t.is_alive():
             self.logger.debug(msg='checking if image has arrrived')
             self.after(500, self._check_image_load, t)
         else:
